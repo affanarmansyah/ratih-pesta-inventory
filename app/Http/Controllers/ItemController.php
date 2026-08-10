@@ -11,10 +11,22 @@ class ItemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::with('category')->latest()->get();
-        return view('items.index', compact('items'));
+        $query = Item::with('category');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $items = $query->orderBy('name')->paginate(20)->withQueryString();
+        $categories = Category::all();
+
+        return view('items.index', compact('items', 'categories'));
     }
 
     public function create()

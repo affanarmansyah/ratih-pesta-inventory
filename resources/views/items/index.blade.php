@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    @if(session('success'))
+    @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
@@ -15,9 +15,23 @@
 
     <div class="card">
         <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <input type="text" name="search" class="form-control mr-2" placeholder="Cari nama barang..."
+                    value="{{ request('search') }}">
+                <select name="category_id" class="form-control mr-2">
+                    <option value="">Semua Kategori</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                            {{ $cat->name }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{{ route('items.index') }}" class="btn btn-secondary ml-2">Reset</a>
+            </form>
             <table class="table table-bordered">
                 <thead>
                     <tr>
+                        <th>No</th>
                         <th>Nama Barang</th>
                         <th>Kategori</th>
                         <th>Satuan</th>
@@ -29,6 +43,7 @@
                 <tbody>
                     @forelse($items as $item)
                         <tr>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->category->name }}</td>
                             <td>{{ $item->unit }}</td>
@@ -40,7 +55,8 @@
                             </td>
                             <td>
                                 <a href="{{ route('items.edit', $item) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="{{ route('items.destroy', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus barang ini?')">
+                                <form action="{{ route('items.destroy', $item) }}" method="POST" class="d-inline"
+                                    onsubmit="return confirm('Yakin hapus barang ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
@@ -48,7 +64,9 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center">Belum ada barang</td></tr>
+                        <tr>
+                            <td colspan="6" class="text-center">Belum ada barang</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>

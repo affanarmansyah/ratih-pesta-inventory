@@ -28,10 +28,13 @@ Route::middleware('auth')->group(function () {
     Route::get('movements', [StockMovementController::class, 'index'])->name('movements.index');
     Route::get('movements/keluar/create', [StockMovementController::class, 'createOut'])->name('movements.create-out');
     Route::post('movements/keluar', [StockMovementController::class, 'storeOut'])->name('movements.store-out');
-    Route::get('movements/masuk/create', [StockMovementController::class, 'createIn'])->name('movements.create-in');
+    Route::get('movements/masuk/create', [StockMovementController::class, 'selectEventIn'])->name('movements.create-in.select');
+    Route::get('movements/masuk/create/{event}', [StockMovementController::class, 'createIn'])->name('movements.create-in');
+    Route::get('movements/masuk/create-manual', [StockMovementController::class, 'createInManual'])->name('movements.create-in-manual');
     Route::post('movements/masuk', [StockMovementController::class, 'storeIn'])->name('movements.store-in');
     Route::get('movements/event/{event}', [StockMovementController::class, 'byEvent'])->name('movements.by-event');
     Route::get('movements/non-event', [StockMovementController::class, 'nonEvent'])->name('movements.non-event');
+    Route::post('movements/{movement}/void', [StockMovementController::class, 'void'])->name('movements.void');
 
     Route::get('opname', [OpnameController::class, 'create'])->name('opname.create');
     Route::post('opname', [OpnameController::class, 'store'])->name('opname.store');

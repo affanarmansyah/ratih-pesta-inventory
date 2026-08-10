@@ -36,6 +36,7 @@ class OpnameController extends Controller
                 $difference = $physicalQty - $systemQty;
 
                 OpnameRecord::create([
+                    'user_id' => auth()->id(),
                     'item_id' => $itemId,
                     'session_date' => $validated['session_date'],
                     'system_qty' => $systemQty,
@@ -54,9 +55,23 @@ class OpnameController extends Controller
         return redirect()->route('opname.history')->with('success', 'Opname berhasil disimpan');
     }
 
-    public function history()
+    public function history(Request $request)
     {
-        $records = OpnameRecord::with('item')->latest('session_date')->paginate(30);
-        return view('opname.history', compact('records'));
+        $query = OpnameRecord::with('item');
+
+        if ($request->filled('item_id')) {
+            $query->where('item_id', $request->item_id);
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('session_date', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('session_date', '<=', $request->to);
+        }
+
+        $records = $query->latest('session_date')->paginate(30)->withQueryString();
+        $items = Item::orderBy('name')->get();
+
+        return view('opname.history', compact('records', 'items'));
     }
 }

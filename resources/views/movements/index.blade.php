@@ -12,8 +12,18 @@
     @endif
 
     <a href="{{ route('movements.create-out') }}" class="btn btn-danger mb-3">↑ Catat Barang Keluar</a>
-    <a href="{{ route('movements.create-in') }}" class="btn btn-success mb-3">↓ Catat Barang Kembali</a>
+    <a href="{{ route('movements.create-in.select') }}" class="btn btn-success mb-3">↓ Catat Barang Kembali</a>
     <a href="{{ route('movements.non-event') }}" class="btn btn-secondary mb-3">Transaksi Non-Event ({{ $nonEventCount }})</a>
+
+    <form method="GET" class="form-inline mb-3">
+        <input type="text" name="search" class="form-control mr-2" placeholder="Cari nama customer..."
+            value="{{ request('search') }}">
+        <input type="date" name="from" class="form-control mr-2" value="{{ request('from') }}">
+        <span class="mr-2">s/d</span>
+        <input type="date" name="to" class="form-control mr-2" value="{{ request('to') }}">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ route('movements.index') }}" class="btn btn-secondary ml-2">Reset</a>
+    </form>
 
     <div class="card">
         <div class="card-body">

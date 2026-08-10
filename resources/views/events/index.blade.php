@@ -18,6 +18,7 @@
             <table class="table table-bordered">
                 <thead>
                     <tr>
+                        <th>No</th>
                         <th>Nama Customer</th>
                         <th>Tanggal Acara</th>
                         <th>Lokasi</th>
@@ -29,6 +30,7 @@
                 <tbody>
                     @forelse($events as $event)
                         <tr>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $event->customer_name }}</td>
                             <td>{{ $event->event_date->format('d-m-Y') }}</td>
                             <td>{{ $event->location ?? '-' }}</td>
@@ -48,7 +50,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center">Belum ada event</td></tr>
+                        <tr><td colspan="7" class="text-center">Belum ada event</td></tr>
                     @endforelse
                 </tbody>
             </table>

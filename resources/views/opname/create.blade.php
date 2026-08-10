@@ -19,6 +19,7 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
+                            <th>No</th>
                             <th>Kategori</th>
                             <th>Barang</th>
                             <th>Stok Sistem</th>
@@ -29,6 +30,7 @@
                     <tbody>
                         @foreach($items as $item)
                             <tr>
+                                <td>{{ $loop->iteration }}</td>
                                 <td>{{ $item->category->name }}</td>
                                 <td>{{ $item->name }}</td>
                                 <td>{{ $item->stock_available }} {{ $item->unit }}</td>

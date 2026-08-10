@@ -10,14 +10,21 @@ use Illuminate\Support\Facades\DB;
 
 class StockMovementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // daftar event yang punya transaksi, diurutkan dari yang terbaru
-        $events = Event::withCount('movements')
-            ->has('movements')
-            ->latest('event_date')
-            ->paginate(15);
+        $query = Event::withCount('movements')->has('movements');
 
+        if ($request->filled('search')) {
+            $query->where('customer_name', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('event_date', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('event_date', '<=', $request->to);
+        }
+
+        $events = $query->latest('event_date')->paginate(15)->withQueryString();
         $nonEventCount = StockMovement::whereNull('event_id')->count();
 
         return view('movements.index', compact('events', 'nonEventCount'));
@@ -66,6 +73,7 @@ class StockMovementController extends Controller
 
         DB::transaction(function () use ($validated, $item) {
             StockMovement::create([
+                'user_id' => auth()->id(),
                 'item_id' => $validated['item_id'],
                 'event_id' => $validated['event_id'] ?? null,
                 'type' => 'keluar',
@@ -83,11 +91,43 @@ class StockMovementController extends Controller
 
     // ==== BARANG MASUK (KEMBALI) ====
 
-    public function createIn()
+    // Step 1: pilih event yang masih ada barang belum kembali
+    public function selectEventIn()
+    {
+        $eventIds = DB::table('stock_movements')
+            ->whereNotNull('event_id')
+            ->whereNull('voided_at')
+            ->groupBy('event_id')
+            ->havingRaw("SUM(CASE WHEN type='keluar' THEN quantity ELSE -quantity END) > 0")
+            ->pluck('event_id');
+
+        $events = Event::whereIn('id', $eventIds)->orderBy('event_date')->get();
+
+        return view('movements.select-event-in', compact('events'));
+    }
+
+    // Step 2: form barang kembali, item-nya udah difilter sesuai event
+    public function createIn(Event $event)
+    {
+        $outstanding = DB::table('stock_movements')
+            ->where('event_id', $event->id)
+            ->whereNull('voided_at')
+            ->selectRaw("item_id, SUM(CASE WHEN type='keluar' THEN quantity ELSE -quantity END) as outstanding")
+            ->groupBy('item_id')
+            ->having('outstanding', '>', 0)
+            ->pluck('outstanding', 'item_id');
+
+        $items = Item::whereIn('id', $outstanding->keys())->get();
+
+        return view('movements.create-in', compact('event', 'items', 'outstanding'));
+    }
+
+    // Jalur alternatif: tanpa event (misal penyesuaian manual)
+    public function createInManual()
     {
         $items = Item::all();
         $events = Event::all();
-        return view('movements.create-in', compact('items', 'events'));
+        return view('movements.create-in-manual', compact('items', 'events'));
     }
 
     public function storeIn(Request $request)
@@ -105,9 +145,26 @@ class StockMovementController extends Controller
         $qtyBaik = $validated['qty_baik'] ?? 0;
         $qtyRusak = $validated['qty_rusak'] ?? 0;
         $qtyHilang = $validated['qty_hilang'] ?? 0;
+        $totalQty = $qtyBaik + $qtyRusak + $qtyHilang;
 
-        if ($qtyBaik + $qtyRusak + $qtyHilang === 0) {
+        if ($totalQty === 0) {
             return back()->withErrors(['qty_baik' => 'Isi minimal salah satu jumlah kondisi barang'])->withInput();
+        }
+
+        // kalau terkait event, cegah input melebihi sisa yang beneran masih di luar
+        if (!empty($validated['event_id'])) {
+            $outstanding = DB::table('stock_movements')
+                ->where('event_id', $validated['event_id'])
+                ->where('item_id', $validated['item_id'])
+                ->whereNull('voided_at')
+                ->selectRaw("SUM(CASE WHEN type='keluar' THEN quantity ELSE -quantity END) as outstanding")
+                ->value('outstanding') ?? 0;
+
+            if ($totalQty > $outstanding) {
+                return back()->withErrors([
+                    'qty_baik' => "Total yang dimasukkan ({$totalQty}) melebihi sisa barang yang masih di luar untuk event ini ({$outstanding})"
+                ])->withInput();
+            }
         }
 
         DB::transaction(function () use ($validated, $qtyBaik, $qtyRusak, $qtyHilang) {
@@ -116,6 +173,7 @@ class StockMovementController extends Controller
             foreach (['baik' => $qtyBaik, 'rusak' => $qtyRusak, 'hilang' => $qtyHilang] as $condition => $qty) {
                 if ($qty > 0) {
                     StockMovement::create([
+                        'user_id' => auth()->id(),
                         'item_id' => $validated['item_id'],
                         'event_id' => $validated['event_id'] ?? null,
                         'type' => 'masuk',
@@ -127,10 +185,33 @@ class StockMovementController extends Controller
                 }
             }
 
-            // hanya barang kondisi "baik" yang masuk balik ke stok tersedia
             $item->increment('stock_available', $qtyBaik);
         });
 
         return redirect()->route('movements.index')->with('success', 'Barang kembali berhasil dicatat');
+    }
+
+    public function void(StockMovement $movement)
+    {
+        if ($movement->voided_at) {
+            return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya');
+        }
+
+        DB::transaction(function () use ($movement) {
+            $item = $movement->item;
+
+            if ($movement->type === 'keluar') {
+                $item->increment('stock_available', $movement->quantity);
+            } elseif ($movement->type === 'masuk' && $movement->condition === 'baik') {
+                $item->decrement('stock_available', $movement->quantity);
+            }
+
+            $movement->update([
+                'voided_at' => now(),
+                'voided_by' => auth()->id(),
+            ]);
+        });
+
+        return back()->with('success', 'Transaksi berhasil dibatalkan, stok sudah disesuaikan kembali');
     }
 }
