@@ -3,7 +3,7 @@
 @section('title', 'Catat Barang Kembali - ' . $event->customer_name)
 
 @section('content_header')
-    <h1>Catat Barang Kembali: {{ $event->customer_name }}</h1>
+    <h1>Catat Barang Kembali</h1>
 @stop
 
 @section('content')
@@ -12,6 +12,11 @@
             <form action="{{ route('movements.store-in') }}" method="POST">
                 @csrf
                 <input type="hidden" name="event_id" value="{{ $event->id }}">
+
+                <div class="form-group">
+                    <label>Event</label>
+                    <input type="text" class="form-control" value="{{ $event->customer_name }}" disabled>
+                </div>
 
                 <div class="form-group">
                     <label>Barang</label>

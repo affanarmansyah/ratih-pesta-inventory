@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreEventRequest;
+use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
-use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
     public function index()
     {
-        $events = Event::withCount('movements')->latest('event_date')->get();
+        $events = Event::withCount('movements')->oldest('event_date')->get();
         return view('events.index', compact('events'));
     }
 
@@ -18,14 +19,9 @@ class EventController extends Controller
         return view('events.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreEventRequest $request)
     {
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'event_date' => 'required|date',
-            'location' => 'nullable|string|max:255',
-            'status' => 'required|in:pending,berlangsung,selesai',
-        ]);
+        $validated = $request->validated();
 
         Event::create($validated);
 
@@ -37,14 +33,9 @@ class EventController extends Controller
         return view('events.edit', compact('event'));
     }
 
-    public function update(Request $request, Event $event)
+    public function update(UpdateEventRequest $request, Event $event)
     {
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'event_date' => 'required|date',
-            'location' => 'nullable|string|max:255',
-            'status' => 'required|in:pending,berlangsung,selesai',
-        ]);
+        $validated = $request->validated();
 
         $event->update($validated);
 

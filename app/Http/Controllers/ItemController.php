@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\UpdateItemRequest;
 use App\Models\Category;
 use App\Models\Item;
 use Illuminate\Http\Request;
@@ -35,15 +37,9 @@ class ItemController extends Controller
         return view('items.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(StoreItemRequest $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'unit' => 'required|string|max:50',
-            'stock_total' => 'required|integer|min:0',
-        ]);
-
+        $validated = $request->validated();
         $validated['stock_available'] = $validated['stock_total'];
 
         Item::create($validated);
@@ -57,15 +53,9 @@ class ItemController extends Controller
         return view('items.edit', compact('item', 'categories'));
     }
 
-    public function update(Request $request, Item $item)
+    public function update(UpdateItemRequest $request, Item $item)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'unit' => 'required|string|max:50',
-            'stock_total' => 'required|integer|min:0',
-        ]);
-
+        $validated = $request->validated();
         $validated['stock_available'] = $validated['stock_total'];
 
         $item->update($validated);

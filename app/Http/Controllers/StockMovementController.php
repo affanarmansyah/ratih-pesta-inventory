@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreStockMovementInRequest;
+use App\Http\Requests\StoreStockMovementOutRequest;
 use App\Models\Item;
 use App\Models\Event;
 use App\Models\StockMovement;
@@ -24,7 +26,7 @@ class StockMovementController extends Controller
             $query->whereDate('event_date', '<=', $request->to);
         }
 
-        $events = $query->latest('event_date')->paginate(15)->withQueryString();
+        $events = $query->oldest('event_date')->paginate(15)->withQueryString();
         $nonEventCount = StockMovement::whereNull('event_id')->count();
 
         return view('movements.index', compact('events', 'nonEventCount'));
@@ -40,7 +42,7 @@ class StockMovementController extends Controller
     {
         $movements = StockMovement::whereNull('event_id')
             ->with('item')
-            ->latest('movement_date')
+            ->oldest('movement_date')
             ->paginate(20);
 
         return view('movements.non-event', compact('movements'));
@@ -48,28 +50,23 @@ class StockMovementController extends Controller
 
     // ==== BARANG KELUAR ====
 
-    public function createOut()
+    public function selectEventOut()
     {
-        $items = Item::where('stock_available', '>', 0)->get();
-        $events = Event::where('status', '!=', 'selesai')->get();
-        return view('movements.create-out', compact('items', 'events'));
+        $events = Event::where('status', '!=', 'selesai')->orderBy('event_date')->get();
+        return view('movements.select-event-out', compact('events'));
     }
 
-    public function storeOut(Request $request)
+    public function createOut(Event $event)
     {
-        $validated = $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'event_id' => 'nullable|exists:events,id',
-            'quantity' => 'required|integer|min:1',
-            'movement_date' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+        $items = Item::where('stock_available', '>', 0)->get();
+        return view('movements.create-out', compact('items', 'event'));
+    }
+
+    public function storeOut(StoreStockMovementOutRequest $request)
+    {
+        $validated = $request->validated();
 
         $item = Item::findOrFail($validated['item_id']);
-
-        if ($validated['quantity'] > $item->stock_available) {
-            return back()->withErrors(['quantity' => "Stok tersedia cuma {$item->stock_available}, gak cukup untuk {$validated['quantity']}"])->withInput();
-        }
 
         DB::transaction(function () use ($validated, $item) {
             StockMovement::create([
@@ -130,42 +127,13 @@ class StockMovementController extends Controller
         return view('movements.create-in-manual', compact('items', 'events'));
     }
 
-    public function storeIn(Request $request)
+    public function storeIn(StoreStockMovementInRequest $request)
     {
-        $validated = $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'event_id' => 'nullable|exists:events,id',
-            'qty_baik' => 'nullable|integer|min:0',
-            'qty_rusak' => 'nullable|integer|min:0',
-            'qty_hilang' => 'nullable|integer|min:0',
-            'movement_date' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $qtyBaik = $validated['qty_baik'] ?? 0;
         $qtyRusak = $validated['qty_rusak'] ?? 0;
         $qtyHilang = $validated['qty_hilang'] ?? 0;
-        $totalQty = $qtyBaik + $qtyRusak + $qtyHilang;
-
-        if ($totalQty === 0) {
-            return back()->withErrors(['qty_baik' => 'Isi minimal salah satu jumlah kondisi barang'])->withInput();
-        }
-
-        // kalau terkait event, cegah input melebihi sisa yang beneran masih di luar
-        if (!empty($validated['event_id'])) {
-            $outstanding = DB::table('stock_movements')
-                ->where('event_id', $validated['event_id'])
-                ->where('item_id', $validated['item_id'])
-                ->whereNull('voided_at')
-                ->selectRaw("SUM(CASE WHEN type='keluar' THEN quantity ELSE -quantity END) as outstanding")
-                ->value('outstanding') ?? 0;
-
-            if ($totalQty > $outstanding) {
-                return back()->withErrors([
-                    'qty_baik' => "Total yang dimasukkan ({$totalQty}) melebihi sisa barang yang masih di luar untuk event ini ({$outstanding})"
-                ])->withInput();
-            }
-        }
 
         DB::transaction(function () use ($validated, $qtyBaik, $qtyRusak, $qtyHilang) {
             $item = Item::findOrFail($validated['item_id']);

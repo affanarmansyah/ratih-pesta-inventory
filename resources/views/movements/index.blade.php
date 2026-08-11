@@ -11,7 +11,7 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <a href="{{ route('movements.create-out') }}" class="btn btn-danger mb-3">↑ Catat Barang Keluar</a>
+    <a href="{{ route('movements.create-out.select') }}" class="btn btn-danger mb-3">↑ Catat Barang Keluar</a>
     <a href="{{ route('movements.create-in.select') }}" class="btn btn-success mb-3">↓ Catat Barang Kembali</a>
     <a href="{{ route('movements.non-event') }}" class="btn btn-secondary mb-3">Transaksi Non-Event ({{ $nonEventCount }})</a>
 

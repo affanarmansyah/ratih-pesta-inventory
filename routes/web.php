@@ -26,8 +26,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('items', ItemController::class);
 
     Route::get('movements', [StockMovementController::class, 'index'])->name('movements.index');
-    Route::get('movements/keluar/create', [StockMovementController::class, 'createOut'])->name('movements.create-out');
     Route::post('movements/keluar', [StockMovementController::class, 'storeOut'])->name('movements.store-out');
+    Route::get('movements/keluar/create', [StockMovementController::class, 'selectEventOut'])->name('movements.create-out.select');
+    Route::get('movements/keluar/create/{event}', [StockMovementController::class, 'createOut'])->name('movements.create-out');
+
     Route::get('movements/masuk/create', [StockMovementController::class, 'selectEventIn'])->name('movements.create-in.select');
     Route::get('movements/masuk/create/{event}', [StockMovementController::class, 'createIn'])->name('movements.create-in');
     Route::get('movements/masuk/create-manual', [StockMovementController::class, 'createInManual'])->name('movements.create-in-manual');

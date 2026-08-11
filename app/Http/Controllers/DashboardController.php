@@ -21,14 +21,14 @@ class DashboardController extends Controller
         // ganti dari movement mentah jadi event terbaru yang punya transaksi
         $recentEvents = Event::withCount('movements')
             ->has('movements')
-            ->latest('event_date')
+            ->oldest('event_date')
             ->take(5)
             ->get();
 
         $recentDiscrepancies = OpnameRecord::with('item')
             ->where('difference', '!=', 0)
             ->where('session_date', '>=', now()->subDays(30))
-            ->latest('session_date')
+            ->oldest('session_date')
             ->take(5)
             ->get();
 

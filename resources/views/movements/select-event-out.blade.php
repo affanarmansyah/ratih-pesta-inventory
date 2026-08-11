@@ -1,14 +1,12 @@
 @extends('adminlte::page')
 
-@section('title', 'Pilih Event - Barang Kembali')
+@section('title', 'Pilih Event - Barang Keluar')
 
 @section('content_header')
-    <h1>Pilih Event untuk Catat Barang Kembali</h1>
+    <h1>Pilih Event untuk Catat Barang Keluar</h1>
 @stop
 
 @section('content')
-    <p class="text-muted">Cuma event yang masih ada barang belum kembali sepenuhnya yang muncul di sini.</p>
-
     <div class="card">
         <div class="card-body">
             <table class="table table-bordered">
@@ -26,12 +24,12 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $event->customer_name }}</td>
                             <td>{{ $event->event_date->format('d-m-Y') }}</td>
-                            <td><a href="{{ route('movements.create-in', $event) }}" class="btn btn-sm btn-success">Catat
-                                    Barang Kembali</a></td>
+                            <td><a href="{{ route('movements.create-out', $event) }}" class="btn btn-sm btn-danger">Catat
+                                    Barang Keluar</a></td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center">Gak ada event dengan barang yang masih di luar</td>
+                            <td colspan="4" class="text-center">Gak ada event dengan barang yang masih di luar</td>
                         </tr>
                     @endforelse
                 </tbody>

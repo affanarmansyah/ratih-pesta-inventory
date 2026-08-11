@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreOpnameRequest;
 use App\Models\Item;
 use App\Models\OpnameRecord;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class OpnameController extends Controller
 {
@@ -16,14 +17,9 @@ class OpnameController extends Controller
         return view('opname.create', compact('items'));
     }
 
-    public function store(Request $request)
+    public function store(StoreOpnameRequest $request)
     {
-        $validated = $request->validate([
-            'session_date' => 'required|date',
-            'physical_qty' => 'required|array',
-            'physical_qty.*' => 'nullable|integer|min:0',
-            'notes' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($validated) {
             foreach ($validated['physical_qty'] as $itemId => $physicalQty) {
@@ -69,7 +65,7 @@ class OpnameController extends Controller
             $query->whereDate('session_date', '<=', $request->to);
         }
 
-        $records = $query->latest('session_date')->paginate(30)->withQueryString();
+        $records = $query->oldest('session_date')->paginate(30)->withQueryString();
         $items = Item::orderBy('name')->get();
 
         return view('opname.history', compact('records', 'items'));
