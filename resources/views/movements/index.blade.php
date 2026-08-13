@@ -43,7 +43,7 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $event->customer_name }}</td>
-                            <td>{{ $event->event_date->format('m-d-Y') }}</td>
+                            <td>{{ $event->event_date->format('d-m-Y') }}</td>
                             <td>
                                 <span
                                     class="badge {{ $event->status === 'selesai' ? 'badge-success' : ($event->status === 'berlangsung' ? 'badge-warning' : 'badge-secondary') }}">

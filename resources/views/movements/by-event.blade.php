@@ -17,7 +17,7 @@
 
     <div class="card card-outline card-primary mb-3">
         <div class="card-body">
-            <strong>Tanggal Acara:</strong> {{ $event->event_date->format('m-d-Y') }}<br>
+            <strong>Tanggal Acara:</strong> {{ $event->event_date->format('d-m-Y') }}<br>
             <strong>Lokasi:</strong> {{ $event->location ?? '-' }}<br>
             <strong>Status:</strong> {{ ucfirst($event->status) }}
         </div>
@@ -43,7 +43,7 @@
                     @forelse($movements as $m)
                         <tr class="{{ $m->voided_at ? 'text-muted' : '' }}">
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $m->movement_date->format('m-d-Y') }}</td>
+                            <td>{{ $m->movement_date->format('d-m-Y') }}</td>
                             <td>{{ $m->item->name }}</td>
                             <td>
                                 <span class="badge {{ $m->type === 'keluar' ? 'badge-danger' : 'badge-success' }}">

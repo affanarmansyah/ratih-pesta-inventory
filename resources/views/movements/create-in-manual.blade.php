@@ -23,16 +23,6 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Terkait Event (opsional)</label>
-                    <select name="event_id" class="form-control">
-                        <option value="">-- Tidak terkait event --</option>
-                        @foreach ($events as $event)
-                            <option value="{{ $event->id }}">{{ $event->customer_name }} -
-                                {{ $event->event_date->format('m-d-Y') }}</option>
-                        @endforeach
-                    </select>
-                </div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">

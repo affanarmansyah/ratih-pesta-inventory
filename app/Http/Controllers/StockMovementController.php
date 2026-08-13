@@ -123,7 +123,6 @@ class StockMovementController extends Controller
     public function createInManual()
     {
         $items = Item::all();
-        $events = Event::all();
         return view('movements.create-in-manual', compact('items', 'events'));
     }
 
